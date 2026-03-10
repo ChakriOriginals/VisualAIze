@@ -21,19 +21,29 @@ Return a JSON object with EXACTLY these keys:
   "concept_ordering": ["<concept_name_1>", "<concept_name_2>"]
 }
 Rules: concept_ordering lists all names in teaching order. Maximum 5 concepts.
+If a KNOWLEDGE BASE section is provided, use it to improve accuracy and ensure mathematical_form uses correct LaTeX — but only extract concepts present in the input.
 """
 
-def run(parsed: ParsedContent, difficulty_level: str = "undergraduate") -> ConceptExtractionResult:
+def run(parsed: ParsedContent, difficulty_level: str = "undergraduate", rag_context: str = "") -> ConceptExtractionResult:
+    rag_section = (
+        f"\n\nKNOWLEDGE BASE (use to improve accuracy and LaTeX correctness):\n{rag_context}\n"
+        if rag_context else ""
+    )
+
     user_prompt = (
-        f"Difficulty level: {difficulty_level}\n\n"
-        f"Main topic: {parsed.main_topic}\n\n"
+        f"Difficulty level: {difficulty_level}"
+        f"{rag_section}"
+        f"\n\nMain topic: {parsed.main_topic}\n\n"
         f"Definitions:\n" + "\n".join(f"- {d}" for d in parsed.definitions) + "\n\n"
         f"Key equations:\n" + "\n".join(f"- {e}" for e in parsed.key_equations) + "\n\n"
         f"Core claims:\n" + "\n".join(f"- {c}" for c in parsed.core_claims)
     )
+
     result = llm_call(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt, response_model=ConceptExtractionResult)
+
     if len(result.core_concepts) > settings.max_concepts:
         result.core_concepts = result.core_concepts[:settings.max_concepts]
         result.concept_ordering = result.concept_ordering[:settings.max_concepts]
+
     logger.info("Concepts extracted: %s", [c.concept_name for c in result.core_concepts])
     return result

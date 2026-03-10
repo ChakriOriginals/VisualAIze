@@ -23,18 +23,33 @@ Design a sequence of animation scenes. Return a JSON object:
   ]
 }
 Rules: 3-5 scenes. Scene 1 MUST be an intuitive hook with equations_to_show: []. Final scene introduces the formal statement.
+If a KNOWLEDGE BASE section is provided, use it to design more accurate scenes with correct equations and better visual metaphors.
 """
 
-def run(concepts: ConceptExtractionResult, difficulty_level: str = "undergraduate") -> PedagogyPlan:
+def run(concepts: ConceptExtractionResult, difficulty_level: str = "undergraduate", rag_context: str = "") -> PedagogyPlan:
+    rag_section = (
+        f"\n\nKNOWLEDGE BASE (use for accurate equations and visual metaphor ideas):\n{rag_context}\n"
+        if rag_context else ""
+    )
+
     concept_text = "\n\n".join(
         f"Concept: {c.concept_name}\nExplanation: {c.intuitive_explanation}\nMath: {c.mathematical_form}\nSignificance: {c.why_it_matters}"
         for c in concepts.core_concepts
     )
-    user_prompt = f"Difficulty level: {difficulty_level}\n\nConcept ordering: {', '.join(concepts.concept_ordering)}\n\nConcepts:\n{concept_text}"
+
+    user_prompt = (
+        f"Difficulty level: {difficulty_level}"
+        f"{rag_section}"
+        f"\n\nConcept ordering: {', '.join(concepts.concept_ordering)}\n\n"
+        f"Concepts:\n{concept_text}"
+    )
+
     result = llm_call(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt, response_model=PedagogyPlan)
+
     if len(result.scenes) > settings.max_scenes:
         result.scenes = result.scenes[:settings.max_scenes]
     for i, s in enumerate(result.scenes):
         s.scene_id = i + 1
+
     logger.info("Pedagogy plan: %s", [s.scene_title for s in result.scenes])
     return result

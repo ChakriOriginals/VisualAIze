@@ -24,21 +24,34 @@ def run_pipeline(raw_text: str, difficulty_level: str = "undergraduate", job_id:
     trace = PipelineTrace()
     logger.info("=== Pipeline START job_id=%s ===", job_id)
 
+    # RAG: retrieve relevant math knowledge before any agents run
+    rag_context = ""
+    try:
+        from backend.rag.retriever import retrieve_multi, format_context
+        rag_docs = retrieve_multi(
+            queries=[raw_text[:200], f"{raw_text[:100]} formula", f"{raw_text[:100]} definition examples"],
+            n_per_query=4
+        )
+        rag_context = format_context(rag_docs, max_chars=2500)
+        logger.info("RAG: retrieved %d documents", len(rag_docs))
+    except Exception as e:
+        logger.warning("RAG retrieval failed, continuing without context: %s", e)
+
     try:
         logger.info("[1/6] Parser Agent...")
-        trace.parsed_content = parser_agent.run(raw_text, difficulty_level)
+        trace.parsed_content = parser_agent.run(raw_text, difficulty_level, rag_context=rag_context)
     except Exception as exc:
         return GenerateVideoResponse(job_id=job_id, status="failed", error=f"Parser Agent failed: {exc}")
 
     try:
         logger.info("[2/6] Concept Extraction Agent...")
-        trace.concepts = concept_agent.run(trace.parsed_content, difficulty_level)
+        trace.concepts = concept_agent.run(trace.parsed_content, difficulty_level, rag_context=rag_context)
     except Exception as exc:
         return GenerateVideoResponse(job_id=job_id, status="failed", error=f"Concept Extraction Agent failed: {exc}")
 
     try:
         logger.info("[3/6] Pedagogy Planner Agent...")
-        trace.pedagogy_plan = pedagogy_agent.run(trace.concepts, difficulty_level)
+        trace.pedagogy_plan = pedagogy_agent.run(trace.concepts, difficulty_level, rag_context=rag_context)
     except Exception as exc:
         return GenerateVideoResponse(job_id=job_id, status="failed", error=f"Pedagogy Planner Agent failed: {exc}")
 

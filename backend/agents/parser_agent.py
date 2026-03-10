@@ -18,6 +18,7 @@ Return a JSON object with EXACTLY these keys:
   "example_instances": ["<list of concrete examples>"]
 }
 Rules: All LaTeX must be valid inline LaTeX. Maximum 6 items per list. Use [] if absent.
+If a KNOWLEDGE BASE section is provided, use it to improve accuracy and fill gaps — but only extract content that is actually present in the INPUT CONTENT.
 """
 
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
@@ -34,11 +35,22 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
         raise ValueError("PDF appears to be empty or contains only scanned images.")
     return combined
 
-def run(raw_text: str, difficulty_level: str = "undergraduate") -> ParsedContent:
+def run(raw_text: str, difficulty_level: str = "undergraduate", rag_context: str = "") -> ParsedContent:
     truncated = raw_text[:6000]
     if len(raw_text) > 6000:
         logger.warning("Input truncated from %d to 6000 chars.", len(raw_text))
-    user_prompt = f"Difficulty level: {difficulty_level}\n\nInput content:\n{truncated}"
+
+    rag_section = (
+        f"\n\nKNOWLEDGE BASE (use to improve accuracy, do not hallucinate):\n{rag_context}\n"
+        if rag_context else ""
+    )
+
+    user_prompt = (
+        f"Difficulty level: {difficulty_level}"
+        f"{rag_section}"
+        f"\n\nINPUT CONTENT:\n{truncated}"
+    )
+
     result = llm_call(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt, response_model=ParsedContent)
     logger.info("Parser agent completed. Topic: %s", result.main_topic)
     return result
