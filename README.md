@@ -186,6 +186,3 @@ VisualAIze/
 - Rendering time: 2–5 minutes on CPU (no GPU required)
 - LaTeX rendering requires MiKTeX installed and on system PATH
 
-## License
-
-MIT
