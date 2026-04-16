@@ -90,7 +90,7 @@ cp .env.example .env
 ## Environment Variables
 
 ```env
-GROQ_API_KEY=your_groq_key_here
+GROQ_API_KEY
 LLM_MODEL=llama-3.3-70b-versatile
 MAX_SCENES=5
 RENDER_QUALITY=medium_quality
