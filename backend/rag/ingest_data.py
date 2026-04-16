@@ -1,5 +1,5 @@
 """
-Maximized RAG ingestion for MathVizAI.
+Maximized RAG ingestion for VisualAIze.
 Run once: python -m backend.rag.ingest_data
 
 Datasets used:
@@ -442,7 +442,7 @@ def ingest_stackexchange_math(collection, max_samples: int = 2000) -> int:
 def main():
     start = time.time()
     logger.info("=" * 60)
-    logger.info("MathVizAI RAG — Maximized Knowledge Ingestion")
+    logger.info("VisualAIze RAG: Maximized Knowledge Ingestion")
     logger.info("=" * 60)
 
     collection = _get_collection()

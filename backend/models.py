@@ -54,14 +54,14 @@ class SceneInstructionSet(BaseModel):
 
 class AnimationCode(BaseModel):
     python_code: str = ""
-    manim_class_name: str = "MathVizScene"
+    manim_class_name: str = "VisualAIzeScene"
     code: str = ""
 
     def model_post_init(self, __context):
         if self.code and not self.python_code:
             self.python_code = self.code
         if not self.manim_class_name:
-            self.manim_class_name = "MathVizScene"
+            self.manim_class_name = "VisualAIzeScene"
         if self.python_code:
             match = re.search(r'class\s+(\w+)\s*\(\s*Scene\s*\)', self.python_code)
             if match:

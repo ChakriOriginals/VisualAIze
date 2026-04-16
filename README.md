@@ -1,4 +1,4 @@
-# MathVizAI MVP
+# VisualAIze MVP
 
 An LLM-driven system that converts mathematical topics and research paper excerpts into high-quality animated visual explanations (3Blue1Brown style).
 
@@ -18,7 +18,7 @@ An LLM-driven system that converts mathematical topics and research paper excerp
 ### Installation
 ```bash
 # 1. Clone / unzip the project
-cd mathvizai
+cd VisualAIze
 
 # 2. Install Python dependencies
 pip install -r requirements.txt

@@ -1,5 +1,5 @@
 """
-MathVizAI – Streamlit Frontend
+VisualAIze – Streamlit Frontend
 A clean, dark-themed UI for generating math animations.
 """
 
@@ -13,7 +13,7 @@ import streamlit as st
 
 # ── Page Config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="MathVizAI",
+    page_title="VisualAIze",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -115,9 +115,9 @@ hr { border-color: #2a2d42; }
 
 
 # ── Header ────────────────────────────────────────────────────────────────────
-st.markdown('<div class="main-title">MathVizAI</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">VisualAIze</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="subtitle">Transform math concepts into beautiful animations — powered by AI + Manim</div>',
+    '<div class="subtitle">Transform math concepts into beautiful animations powered Manim</div>',
     unsafe_allow_html=True,
 )
 st.markdown("---")
@@ -257,7 +257,7 @@ if generate_clicked:
                 st.download_button(
                     label="⬇️  Download MP4",
                     data=Path(video_path).read_bytes(),
-                    file_name=f"mathvizai_{job_id[:8]}.mp4",
+                    file_name=f"VisualAIze_{job_id[:8]}.mp4",
                     mime="video/mp4",
                     use_container_width=True,
                 )

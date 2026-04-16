@@ -1,73 +1,78 @@
 from __future__ import annotations
 import logging
 from backend.llm_client import llm_call
-from backend.models import ManimAnimation, ManimObject, PedagogyPlan, SceneInstruction, SceneInstructionSet
+from backend.models import PedagogyPlan, SceneInstructionSet, SceneInstruction, ManimObject, ManimAnimation
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_TYPES = {"Axes", "NumberLine", "Text", "MathTex", "Graph", "Arrow", "Dot", "Circle", "Rectangle"}
-ALLOWED_ACTIONS = {"Create", "Write", "Transform", "FadeIn", "FadeOut", "GrowFromCenter", "ShowCreation"}
-
 SYSTEM_PROMPT = """
+You are a Manim scene architect. Generate precise scene instructions from a pedagogy plan.
 
-STRICT_RULES = 
-IMPORTANT: Only use concepts, equations, and examples explicitly provided in the pedagogy plan.
-Do not invent new mathematical content.
-All MathTex expressions must use valid LaTeX notation.
+SCREEN ZONES (use these exact positions):
+  Title   → to_edge(UP, buff=0.2), font_size=36, color=YELLOW
+  Content → y between -2.0 and 2.5 (shapes, diagrams, graphs)
+  Equation→ move_to([0, -2.8, 0]), font_size=44
+  Caption → move_to([0, -3.2, 0]), font_size=24
 
-Convert pedagogical scenes into Manim animation instructions.
-ALLOWED object types: Axes, NumberLine, Text, MathTex, Arrow, Dot, Circle, Rectangle
-ALLOWED animation actions: Create, Write, Transform, FadeIn, FadeOut, GrowFromCenter
+RULES:
+- Max 4 objects visible at once
+- Every equation: position = "move_to([0, -2.8, 0])"
+- Every title: position = "to_edge(UP, buff=0.2)"
+- Every scene MUST end with: FadeOut(*mobjects) run_time=0.8, then wait 0.4
+- All positions are 3D: [x, y, 0]
 
-Return ONLY this JSON structure, keep it concise:
+Return JSON:
 {
   "scene_instructions": [
     {
       "scene_id": 1,
       "objects": [
-        {"obj_id": "title_1", "obj_type": "Text", "properties": {"text": "Hello"}}
+        {"obj_id": "title_1", "obj_type": "Text",
+         "properties": {"text": "Title", "font_size": 36, "color": "YELLOW",
+                        "position": "to_edge(UP, buff=0.2)"}},
+        {"obj_id": "eq_1", "obj_type": "MathTex",
+         "properties": {"latex": "a^2+b^2=c^2", "font_size": 44,
+                        "position": "move_to([0, -2.8, 0])"}}
       ],
       "animations": [
-        {"action": "Write", "target": "title_1", "duration": 1.5, "kwargs": {}}
-      ],
-      "camera_actions": []
+        {"action": "Write",   "target": "title_1",   "duration": 1.2},
+        {"action": "wait",    "target": "",           "duration": 1.0},
+        {"action": "Write",   "target": "eq_1",       "duration": 2.0},
+        {"action": "wait",    "target": "",           "duration": 1.5},
+        {"action": "FadeOut", "target": "*mobjects",  "duration": 0.8},
+        {"action": "wait",    "target": "",           "duration": 0.4}
+      ]
     }
   ]
 }
-Rules:
-- Maximum 4 objects per scene
-- Maximum 4 animations per scene
-- obj_id must be unique snake_case within each scene
-- animation target must exactly match an obj_id
-- Keep property values short strings only
 """
 
-def _sanitize_instruction(instr: SceneInstruction) -> SceneInstruction:
-    valid_ids = set()
-    sanitized_objects = []
-    for obj in instr.objects:
-        if obj.obj_type not in ALLOWED_TYPES:
-            obj.obj_type = "Text"
-            if "text" not in obj.properties:
-                obj.properties["text"] = obj.obj_id
-        valid_ids.add(obj.obj_id)
-        sanitized_objects.append(obj)
-    sanitized_anims = []
-    for anim in instr.animations:
-        if anim.action not in ALLOWED_ACTIONS:
-            anim.action = "FadeIn"
-        if anim.action != "Transform" and anim.target not in valid_ids:
-            logger.warning("Animation target '%s' not found, skipping.", anim.target)
-            continue
-        sanitized_anims.append(anim)
-    return SceneInstruction(scene_id=instr.scene_id, objects=sanitized_objects, animations=sanitized_anims, camera_actions=instr.camera_actions)
-
 def run(plan: PedagogyPlan) -> SceneInstructionSet:
-    scenes_text = "\n\n".join(
-        f"Scene {s.scene_id}: {s.scene_title}\nGoal: {s.learning_goal}\nMetaphor: {s.visual_metaphor}\nEquations: {s.equations_to_show}\nStrategy: {s.animation_strategy}"
-        for s in plan.scenes
+    scenes_text = []
+    for scene in plan.scenes:
+        eq_str = "\n".join(f"  - {e}" for e in scene.equations_to_show) if scene.equations_to_show else "  (none)"
+        scenes_text.append(
+            f"Scene {scene.scene_id}: {scene.scene_title}\n"
+            f"Goal: {scene.learning_goal}\n"
+            f"Visual metaphor: {scene.visual_metaphor}\n"
+            f"Animation strategy: {scene.animation_strategy}\n"
+            f"Equations:\n{eq_str}\n"
+            f"Duration: ~{scene.estimated_duration_seconds}s"
+        )
+
+    user_prompt = (
+        "Generate precise scene instructions for this pedagogy plan.\n"
+        "Each scene must use the correct screen zones.\n"
+        "Equations always at y=-2.8. Titles always at top edge.\n\n"
+        + "\n\n".join(scenes_text)
     )
-    result = llm_call(system_prompt=SYSTEM_PROMPT, user_prompt=f"Generate scene instructions:\n\n{scenes_text}", response_model=SceneInstructionSet)
-    result.scene_instructions = [_sanitize_instruction(i) for i in result.scene_instructions]
+
+    result = llm_call(
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=user_prompt,
+        response_model=SceneInstructionSet,
+        max_retries=2
+    )
+
     logger.info("Scene instructions generated: %d scenes", len(result.scene_instructions))
     return result

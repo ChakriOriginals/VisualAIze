@@ -34,7 +34,7 @@ streamlit run frontend/app.py --server.port 8501 &
 FRONTEND_PID=$!
 
 echo ""
-echo "✅ MathVizAI is running!"
+echo "✅ VisualAIze is running!"
 echo "   Backend:  http://localhost:8000/docs"
 echo "   Frontend: http://localhost:8501"
 echo ""

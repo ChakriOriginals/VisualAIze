@@ -13,7 +13,7 @@ from backend.pipeline import run_pipeline
 logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO), format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s")
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="MathVizAI API", version="0.1.0")
+app = FastAPI(title="VisualAIze API", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 @app.get("/health")
@@ -47,4 +47,4 @@ def download_video(job_id: str):
     video_path = settings.output_dir / f"{job_id}.mp4"
     if not video_path.exists():
         raise HTTPException(status_code=404, detail=f"Video not found for job {job_id}.")
-    return FileResponse(path=str(video_path), media_type="video/mp4", filename=f"mathvizai_{job_id}.mp4")
+    return FileResponse(path=str(video_path), media_type="video/mp4", filename=f"VisualAIze_{job_id}.mp4")
