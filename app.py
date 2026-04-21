@@ -1,11 +1,8 @@
 """
 VisualAIze – Streamlit Frontend
-A clean, dark-themed UI for generating math animations.
+Clean, light-themed UI for generating math animations.
 """
 
-import io
-import json
-import time
 from pathlib import Path
 
 import requests
@@ -21,116 +18,242 @@ st.set_page_config(
 
 API_BASE = "http://localhost:8000"
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
+# ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown(
     """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif;
-    background-color: #0d0e14;
-    color: #e8eaf6;
+html, body, [class*="css"], .stApp {
+    font-family: -apple-system, 'SF Pro Display', 'Inter', BlinkMacSystemFont, sans-serif;
+    background-color: #f9f9f7;
+    color: #1a1a1a;
 }
 
-.main-title {
-    font-family: 'Space Mono', monospace;
-    font-size: 3rem;
+#MainMenu, footer, header { visibility: hidden; }
+.block-container { padding-top: 2rem; padding-bottom: 2rem; max-width: 1100px; }
+
+.app-header { text-align: center; padding: 2.5rem 0 1.5rem; }
+.app-title {
+    font-size: 2.8rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #6c63ff, #48cae4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-align: center;
-    margin-bottom: 0.2rem;
+    color: #1a1a1a;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.4rem;
 }
-
-.subtitle {
-    text-align: center;
-    color: #8b9ecf;
+.app-subtitle {
     font-size: 1.05rem;
-    font-weight: 300;
-    margin-bottom: 2rem;
+    color: #6b6b6b;
+    margin-bottom: 0;
+}
+.app-divider {
+    border: none;
+    border-top: 1px solid #e5e5e5;
+    margin: 1.5rem 0;
 }
 
-.step-card {
-    background: #161822;
-    border: 1px solid #2a2d42;
-    border-radius: 12px;
-    padding: 1.2rem 1.5rem;
-    margin-bottom: 0.8rem;
-}
-
-.step-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    color: #6c63ff;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 0.3rem;
-}
-
-.step-title {
-    font-size: 1rem;
+.card-title {
+    font-size: 0.72rem;
     font-weight: 600;
-    color: #c8d0f0;
+    color: #8a8a8a;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.9rem;
 }
 
-.status-success { color: #4caf50; }
-.status-failed  { color: #f44336; }
-.status-running { color: #ffc107; }
+.badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+.badge-success { background: #e8f5e9; color: #2e7d32; }
+.badge-error   { background: #fdecea; color: #c62828; }
+
+.step-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f2f2f2;
+    font-size: 0.88rem;
+}
+.step-row:last-child { border-bottom: none; }
+.step-name { font-weight: 500; }
+.step-desc { color: #8a8a8a; font-size: 0.8rem; }
+
+.stTextArea textarea {
+    border-radius: 12px !important;
+    border: 1.5px solid #e0e0e0 !important;
+    font-family: inherit !important;
+    font-size: 0.95rem !important;
+    color: #1a1a1a !important;
+    background: #fafafa !important;
+}
+.stTextArea textarea:focus {
+    border-color: #1a1a1a !important;
+    box-shadow: none !important;
+}
 
 .stButton > button {
-    background: linear-gradient(135deg, #6c63ff, #48cae4);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.6rem 2rem;
-    font-family: 'Space Mono', monospace;
-    font-weight: 700;
-    font-size: 1rem;
-    letter-spacing: 1px;
-    width: 100%;
-    transition: opacity 0.2s;
+    background: #1a1a1a !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1.5rem !important;
+    font-family: inherit !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    width: 100% !important;
+    transition: opacity 0.2s ease !important;
+}
+.stButton > button:hover { opacity: 0.82 !important; }
+
+.stDownloadButton > button {
+    background: #f0f0f0 !important;
+    color: #1a1a1a !important;
+    border: 1px solid #d0d0d0 !important;
+    border-radius: 12px !important;
+    font-family: inherit !important;
+    font-weight: 500 !important;
 }
 
-.stButton > button:hover { opacity: 0.88; }
-
-.code-box {
-    background: #0a0b10;
-    border: 1px solid #2a2d42;
-    border-radius: 8px;
-    padding: 1rem;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.78rem;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    color: #a8b4e0;
+.stSelectbox label, .stTextArea label, .stFileUploader label {
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: #4a4a4a !important;
 }
 
-hr { border-color: #2a2d42; }
+video { border-radius: 10px; }
+
+section[data-testid="stSidebar"] {
+    background: #f5f5f3;
+    border-right: 1px solid #e5e5e5;
+}
+section[data-testid="stSidebar"] .stButton > button {
+    background: #f0f0f0 !important;
+    color: #1a1a1a !important;
+    border: 1px solid #e0e0e0 !important;
+    font-size: 0.85rem !important;
+    text-align: left !important;
+}
+section[data-testid="stSidebar"] .stButton > button:hover {
+    background: #e5e5e5 !important;
+    opacity: 1 !important;
+}
+
+.stAlert { border-radius: 10px !important; font-size: 0.9rem !important; }
+.streamlit-expanderHeader { font-size: 0.85rem !important; color: #6b6b6b !important; }
+
+/* ── FIX: Radio buttons -> clean pill tabs ───────────────────────────────── */
+div[data-testid="stRadio"] [role="radiogroup"] {
+    display: flex;
+    flex-direction: row;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+div[data-testid="stRadio"] [role="radiogroup"] > label {
+    background: #f4f4f2 !important;
+    border: 1px solid #e3e3e3 !important;
+    border-radius: 999px !important;
+    padding: 0.55rem 0.95rem !important;
+    min-height: 42px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+    transition: all 0.18s ease !important;
+    box-shadow: none !important;
+}
+
+/* Hide the default radio circle */
+div[data-testid="stRadio"] [role="radiogroup"] > label > div:first-child {
+    display: none !important;
+}
+
+/* Text spacing inside the pill */
+div[data-testid="stRadio"] [role="radiogroup"] > label span {
+    font-size: 0.92rem !important;
+    font-weight: 500 !important;
+}
+
+/* Selected tab */
+div[data-testid="stRadio"] [role="radiogroup"] > label:has(input:checked) {
+    background: #1a1a1a !important;
+    border-color: #1a1a1a !important;
+    color: #ffffff !important;
+}
+
+/* Selected tab text */
+div[data-testid="stRadio"] [role="radiogroup"] > label:has(input:checked) span {
+    color: #ffffff !important;
+}
+
+/* Hover state */
+div[data-testid="stRadio"] [role="radiogroup"] > label:hover {
+    border-color: #bdbdbd !important;
+    transform: translateY(-1px);
+}
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-
 # ── Header ────────────────────────────────────────────────────────────────────
-st.markdown('<div class="main-title">VisualAIze</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="subtitle">Transform math concepts into beautiful animations powered Manim</div>',
+    """
+<div class="app-header">
+    <div class="app-title">VisualAIze</div>
+    <div class="app-subtitle">Transform any math concept into a narrated animation</div>
+</div>
+<hr class="app-divider">
+""",
     unsafe_allow_html=True,
 )
-st.markdown("---")
 
-# ── Input Panel ───────────────────────────────────────────────────────────────
+# ── Layout ────────────────────────────────────────────────────────────────────
 col_left, col_right = st.columns([3, 2], gap="large")
 
+STEPS = [
+    ("Parsing", "Extracting mathematical content"),
+    ("Concepts", "Identifying core concepts"),
+    ("Pedagogy", "Designing learning sequence"),
+    ("Scenes", "Building animation structure"),
+    ("Code", "Writing Manim animation code"),
+    ("Rendering", "Rendering video"),
+]
+
+
+def render_steps(active: int) -> str:
+    rows = '<div class="card-title">Status</div>'
+    for i, (name, desc) in enumerate(STEPS):
+        if i < active:
+            icon, style = "✅", "color:#2e7d32"
+        elif i == active:
+            icon, style = "⏳", "color:#f57f17; font-weight:600"
+        else:
+            icon, style = "○", "color:#c0c0c0"
+
+        rows += f"""
+        <div class="step-row" style="{style}">
+            <span style="width:1.2rem;text-align:center">{icon}</span>
+            <span class="step-name">{name}</span>
+            <span class="step-desc">— {desc}</span>
+        </div>"""
+    return rows
+
+
+# ── Left: Input ───────────────────────────────────────────────────────────────
 with col_left:
-    st.markdown("### 📝 Input")
+    st.markdown('<div class="card-title">Input</div>', unsafe_allow_html=True)
 
     input_mode = st.radio(
-        "Input type",
-        ["Topic / text", "Upload PDF"],
+        "mode",
+        ["Concept", "Document Upload"],
         horizontal=True,
         label_visibility="collapsed",
     )
@@ -138,170 +261,159 @@ with col_left:
     raw_text = ""
     uploaded_file = None
 
-    if input_mode == "Topic / text":
+    if input_mode == "Concept":
         raw_text = st.text_area(
-            "Enter a math topic or short excerpt",
-            placeholder="e.g.  Central Limit Theorem\n\nor paste a paragraph from a paper...",
-            height=200,
+            "Topic",
+            placeholder="e.g. Pythagorean Theorem\n\nor paste a paragraph from a textbook...",
+            height=180,
+            label_visibility="collapsed",
         )
     else:
         uploaded_file = st.file_uploader(
-            "Upload a PDF (max 10 pages)",
+            "PDF",
             type=["pdf"],
-            help="Only the first 10 pages are processed.",
+            help="First 10 pages are processed.",
+            label_visibility="collapsed",
         )
 
-    difficulty = st.selectbox(
-        "Difficulty level",
-        ["undergraduate", "high_school"],
-        index=0,
+    difficulty = st.selectbox("Difficulty", ["High School", "Undergraduate"], index=1)
+    difficulty_map = {"High School": "high_school", "Undergraduate": "undergraduate"}
+
+    st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+    generate_clicked = st.button("Generate Animation", use_container_width=True)
+
+# ── Right: Status + Output ────────────────────────────────────────────────────
+with col_right:
+    status_ph = st.empty()
+    progress_ph = st.empty()
+    video_ph = st.empty()
+    dl_ph = st.empty()
+
+    status_ph.markdown(
+        """
+        <div class="card-title">Status</div>
+        <div style="color:#8a8a8a;font-size:0.9rem;padding:0.4rem 0">
+            Enter a topic and click Generate.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    generate_clicked = st.button("🎬  Generate Animation", use_container_width=True)
-
-
-# ── Status / Output Panel ─────────────────────────────────────────────────────
-with col_right:
-    st.markdown("### 📊 Pipeline Status")
-    status_placeholder = st.empty()
-    progress_bar = st.progress(0)
-
-    st.markdown("### 🎥 Output")
-    video_placeholder = st.empty()
-    download_placeholder = st.empty()
-
-
-# ── Generation Logic ──────────────────────────────────────────────────────────
+# ── Generation logic ──────────────────────────────────────────────────────────
 if generate_clicked:
-    has_input = raw_text.strip() or uploaded_file is not None
-    if not has_input:
-        st.error("Please enter a topic/text or upload a PDF before generating.")
+    if not (raw_text.strip() or uploaded_file):
+        st.error("Please enter a topic or upload a PDF.")
         st.stop()
 
-    # Reset UI
-    status_placeholder.empty()
-    video_placeholder.empty()
-    download_placeholder.empty()
-    progress_bar.progress(0)
+    video_ph.empty()
+    dl_ph.empty()
+    status_ph.markdown(render_steps(0), unsafe_allow_html=True)
+    progress_ph.progress(5)
 
-    steps = [
-        ("Parser Agent", "Extracting mathematical content..."),
-        ("Concept Agent", "Identifying core concepts..."),
-        ("Pedagogy Planner", "Designing learning sequence..."),
-        ("Scene Generator", "Building animation instructions..."),
-        ("Code Generator", "Writing Manim code..."),
-        ("Renderer", "Rendering video..."),
-    ]
-
-    with status_placeholder.container():
-        for i, (name, desc) in enumerate(steps):
-            st.markdown(
-                f'<div class="step-card">'
-                f'<div class="step-label">Step {i+1} of {len(steps)}</div>'
-                f'<div class="step-title">⏳ {name} — {desc}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-
-    progress_bar.progress(5)
-
-    # ── Call API ──────────────────────────────────────────────────────────────
-    with st.spinner("Running pipeline (this may take 1–3 minutes)..."):
+    with st.spinner("Generating — this takes 1–4 minutes..."):
         try:
-            if uploaded_file is not None:
-                response = requests.post(
+            if uploaded_file:
+                resp = requests.post(
                     f"{API_BASE}/generate-video-from-pdf",
-                    files={"file": (uploaded_file.name, uploaded_file.read(), "application/pdf")},
-                    data={"difficulty_level": difficulty},
+                    files={
+                        "file": (
+                            uploaded_file.name,
+                            uploaded_file.read(),
+                            "application/pdf",
+                        )
+                    },
+                    data={"difficulty_level": difficulty_map[difficulty]},
                     timeout=1200,
                 )
             else:
-                response = requests.post(
+                resp = requests.post(
                     f"{API_BASE}/generate-video",
-                    json={"topic_or_text": raw_text, "difficulty_level": difficulty},
+                    json={
+                        "topic_or_text": raw_text,
+                        "difficulty_level": difficulty_map[difficulty],
+                    },
                     timeout=1200,
                 )
         except requests.exceptions.ConnectionError:
+            status_ph.empty()
+            progress_ph.empty()
             st.error(
-                "❌ Cannot reach the backend at http://localhost:8000.  "
-                "Make sure the FastAPI server is running:\n\n"
-                "`uvicorn backend.api.main:app --reload`"
+                "Cannot reach backend. Run:\n\n`python -m uvicorn backend.api.main:app --port 8000`"
             )
             st.stop()
         except requests.exceptions.Timeout:
-            st.error("❌ Request timed out. The pipeline took too long — try a simpler topic.")
+            status_ph.empty()
+            progress_ph.empty()
+            st.error("Request timed out. Try a simpler topic.")
             st.stop()
 
-    progress_bar.progress(95)
+    progress_ph.progress(100)
 
-    if response.status_code != 200:
-        st.error(f"API error {response.status_code}: {response.text}")
+    if resp.status_code != 200:
+        status_ph.markdown(
+            '<div class="badge badge-error">❌ Error</div>',
+            unsafe_allow_html=True,
+        )
+        st.error(f"API error {resp.status_code}: {resp.text}")
         st.stop()
 
-    data = response.json()
-    progress_bar.progress(100)
+    data = resp.json()
 
-    # ── Display Results ───────────────────────────────────────────────────────
     if data.get("status") == "success":
-        status_placeholder.success("✅ Pipeline completed successfully!")
+        status_ph.markdown(
+            render_steps(len(STEPS))
+            + '<div class="badge badge-success" style="margin-top:0.8rem">✓ Complete</div>',
+            unsafe_allow_html=True,
+        )
 
-        job_id = data["job_id"]
         video_path = data.get("video_path", "")
+        job_id = data.get("job_id", "video")
 
         if video_path and Path(video_path).exists():
-            with video_placeholder:
-                video_bytes = Path(video_path).read_bytes()
-                st.video(video_bytes)
-
-            with download_placeholder:
-                st.download_button(
-                    label="⬇️  Download MP4",
-                    data=Path(video_path).read_bytes(),
-                    file_name=f"VisualAIze_{job_id[:8]}.mp4",
-                    mime="video/mp4",
-                    use_container_width=True,
-                )
-        else:
-            st.info(
-                f"Video rendered successfully! Download via API:\n\n"
-                f"`GET {API_BASE}/download/{job_id}`"
+            video_bytes = Path(video_path).read_bytes()
+            video_ph.video(video_bytes)
+            dl_ph.download_button(
+                "⬇ Download MP4",
+                data=video_bytes,
+                file_name=f"VisualAIze_{job_id[:8]}.mp4",
+                mime="video/mp4",
+                use_container_width=True,
             )
+        else:
+            st.info(f"Video ready. `GET {API_BASE}/download/{job_id}`")
 
-        # ── Debug / Trace Expander ────────────────────────────────────────────
         trace = data.get("pipeline_trace")
         if trace:
-            with st.expander("🔍 Pipeline trace (debug)", expanded=False):
+            with st.expander("Debug trace", expanded=False):
                 st.json(trace)
-
     else:
-        error_msg = data.get("error", "Unknown error.")
-        status_placeholder.error(f"❌ Pipeline failed:\n\n{error_msg}")
-
+        status_ph.markdown(
+            '<div class="badge badge-error">❌ Failed</div>',
+            unsafe_allow_html=True,
+        )
+        st.error(data.get("error", "Unknown error."))
         trace = data.get("pipeline_trace")
         if trace:
-            with st.expander("🔍 Debug trace", expanded=True):
+            with st.expander("Debug trace", expanded=True):
                 st.json(trace)
 
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+EXAMPLES = [
+    "Pythagorean Theorem",
+    "Central Limit Theorem",
+    "Fourier Transform",
+    "Gradient Descent",
+    "Bayes Theorem",
+    "Eigenvectors and Eigenvalues",
+    "The Derivative as a Limit",
+    "Matrix Multiplication",
+]
 
-# ── Sidebar: Examples ─────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 💡 Example topics")
-    examples = [
-        "Central Limit Theorem",
-        "Eigenvectors and eigenvalues",
-        "Fourier Transform intuition",
-        "Gradient descent optimization",
-        "Bayes' Theorem",
-        "The derivative as a limit",
-    ]
-    for ex in examples:
+    st.markdown("#### Example Topics")
+    st.caption("Click to copy topic")
+    for ex in EXAMPLES:
         if st.button(ex, key=f"ex_{ex}"):
-            # Streamlit can't programmatically fill a text_area from a button
-            # but we surface the example text so the user can copy it
-            st.info(f"Copy this into the input box:\n\n**{ex}**")
-
+            st.info(f"**{ex}**\n\nCopy the text above into the input box.")
     st.markdown("---")
-    st.markdown("### ⚙️ API")
-    st.markdown(
-        f"Backend: [{API_BASE}]({API_BASE}/docs)\n\nSwagger docs available at `/docs`"
-    )
+    st.caption(f"Backend: [localhost:8000]({API_BASE}/docs)")

@@ -31,27 +31,30 @@ def generate_scene_audio(
     voice_name: str = "en-US-AriaNeural",
     speaking_rate: float = 0.92,
 ) -> bool:
-    """
-    Generate audio for a single scene script using edge-tts.
-
-    Best free voices:
-    - en-US-AriaNeural      (female, warm and natural — recommended)
-    - en-US-GuyNeural       (male, clear and authoritative)
-    - en-US-JennyNeural     (female, friendly)
-    - en-US-EricNeural      (male, calm)
-    - en-GB-SoniaNeural     (British female, elegant)
-    - en-GB-RyanNeural      (British male, professional)
-    """
     try:
+        import edge_tts
+        import asyncio
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Convert speaking_rate float to edge-tts rate string
-        # edge-tts uses "+10%" or "-8%" format
         rate_percent = int((speaking_rate - 1.0) * 100)
-        rate_str = f"{rate_percent:+d}%"  # e.g. "-8%"
+        rate_str = f"{rate_percent:+d}%"
 
-        # Run async in sync context
-        asyncio.run(_generate_audio_async(script, output_path, voice_name, rate_str))
+        async def _generate():
+            communicate = edge_tts.Communicate(script, voice_name, rate=rate_str)
+            await communicate.save(str(output_path))
+
+        # Fix: handle both cases — running loop (FastAPI) and no loop
+        try:
+            loop = asyncio.get_running_loop()
+            # We're inside FastAPI's event loop — use a thread executor
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(asyncio.run, _generate())
+                future.result(timeout=30)
+        except RuntimeError:
+            # No running loop — safe to use asyncio.run()
+            asyncio.run(_generate())
 
         if output_path.exists() and output_path.stat().st_size > 0:
             size_kb = output_path.stat().st_size / 1024
@@ -64,7 +67,6 @@ def generate_scene_audio(
     except Exception as e:
         logger.error("TTS generation failed for %s: %s", output_path.name, e)
         return False
-
 
 def get_audio_duration(audio_path: Path) -> float:
     """Get duration of an audio file in seconds using ffprobe."""
