@@ -183,6 +183,6 @@ VisualAIze/
 ## Known Limitations
 
 - Groq free tier: 100,000 tokens/day - complex topics may hit limits
-- Rendering time: 2–5 minutes on CPU (no GPU required)
+- Rendering time: 2-5 minutes on CPU (no GPU required)
 - LaTeX rendering requires MiKTeX installed and on system PATH
 
