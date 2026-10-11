@@ -1,6 +1,6 @@
 # VisualAIze V2.0
 
-An LLM-driven pipeline that converts mathematical topics or PDF excerpts into 3Blue1Brown-style animated educational videos — complete with voiceover narration.
+An LLM-driven pipeline that converts mathematical topics or PDF excerpts into 3Blue1Brown-style animated educational videos - complete with voiceover narration.
 
 ## What's New in V2.0
 
@@ -182,7 +182,7 @@ VisualAIze/
 
 ## Known Limitations
 
-- Groq free tier: 100,000 tokens/day — complex topics may hit limits
+- Groq free tier: 100,000 tokens/day - complex topics may hit limits
 - Rendering time: 2–5 minutes on CPU (no GPU required)
 - LaTeX rendering requires MiKTeX installed and on system PATH
 
