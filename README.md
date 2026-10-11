@@ -5,11 +5,11 @@ An LLM-driven pipeline that converts mathematical topics or PDF excerpts into 3B
 ## What's New in V2.0
 
 - **Switched from OpenAI to Groq** (free tier, Llama 3.3 70B)
-- **RAG system** with ChromaDB — math knowledge base from MATH dataset, GSM8K, DeepMind Mathematics, and curated examples
-- **Manim code RAG** — retrieves relevant animation patterns for better rendering
+- **RAG system** with ChromaDB - math knowledge base from MATH dataset, GSM8K, DeepMind Mathematics, and curated examples
+- **Manim code RAG** - retrieves relevant animation patterns for better rendering
 - **TTS narration** via edge-tts (Microsoft Neural voices, completely free)
 - **Audio-video merging** via ffmpeg
-- **Improved scene quality** — strict layout zones, no overlapping text, clean transitions
+- **Improved scene quality** - strict layout zones, no overlapping text, clean transitions
 - **HTML frontend** as alternative to Streamlit (no executable blocking)
 
 ## Features
